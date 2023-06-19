@@ -2,8 +2,6 @@ Data
 .idea
 Lib
 Pickle Files
-Scripts
-share
 Pickle Files
 Pickle File (Grayscale 100)
 Pickle File (Grayscale 300)
@@ -12,3 +10,7 @@ Pickle File (RGB 224)
 Model
 
 
+
+
+!/Scripts/
+!/share/
