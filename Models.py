@@ -2,7 +2,7 @@ import keras
 import keras.backend as K
 from keras.models import Model
 from keras.layers import Input, Dense, Conv2D, Conv3D, DepthwiseConv2D, SeparableConv2D, Conv3DTranspose
-from keras.layers import Flatten, MaxPool2D, AvgPool2D, GlobalAvgPool2D, UpSampling2D, BatchNormalization
+from keras.layers import Flatten, MaxPool2D, AvgPool2D, GlobalAvgPool2D, UpSampling2D, BatchNormalization, GlobalAveragePooling2D
 from keras.layers import Concatenate, Add, Dropout, ReLU, Lambda, Activation, LeakyReLU, PReLU
 from keras.applications import VGG16, MobileNetV2, ResNet50
 
@@ -258,55 +258,32 @@ class Architectures:
 
 class PreTrainedModels:
 
-    def models(self, n_classes, model='vgg', optimizer='adam', fine_tune=0):
-        if model == 'resnet':
-            model = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
-        elif model == 'mobilenet':
-            model = MobileNetV2(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
-        elif model == 'vgg':
-            model = VGG16(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
+    def models(self, n_classes, model_name='mobilenet', optimizer='adam', fine_tune=0):
+        if model_name == 'resnet':
+            base_model = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
+        elif model_name == 'mobilenet':
+            base_model = MobileNetV2(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
+        elif model_name == 'vgg':
+            base_model = VGG16(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
 
         # Defines how many layers to freeze during training.
         # Layers in the convolutional base are switched from trainable to non-trainable
         # depending on the size of the fine-tuning parameter.
         if fine_tune > 0:
-            for layer in model.layers[:-fine_tune]:
+            for layer in base_model.layers[:-fine_tune]:
                 layer.trainable = False
         else:
-            for layer in model.layers:
+            for layer in base_model.layers:
                 layer.trainable = False
-    # def resNet(self, n_classes, optimizer='adam', fine_tune=0):
-    #     model = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
-    #     # Defines how many layers to freeze during training.
-    #     # Layers in the convolutional base are switched from trainable to non-trainable
-    #     # depending on the size of the fine-tuning parameter.
-    #     if fine_tune > 0:
-    #         for layer in conv_base.layers[:-fine_tune]:
-    #             layer.trainable = False
-    #     else:
-    #         for layer in conv_base.layers:
-    #             layer.trainable = False
-    #
-    # def mobileNet(self, n_classes, optimizer='adam', fine_tune=0):
-    #     model = MobileNetV2(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
-    #     # Defines how many layers to freeze during training.
-    #     # Layers in the convolutional base are switched from trainable to non-trainable
-    #     # depending on the size of the fine-tuning parameter.
-    #     if fine_tune > 0:
-    #         for layer in conv_base.layers[:-fine_tune]:
-    #             layer.trainable = False
-    #     else:
-    #         for layer in conv_base.layers:
-    #             layer.trainable = False
-    #
-    # def vgg(self, n_classes, optimizer='adam', fine_tune=0):
-    #     model = VGG16(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
-    #     # Defines how many layers to freeze during training.
-    #     # Layers in the convolutional base are switched from trainable to non-trainable
-    #     # depending on the size of the fine-tuning parameter.
-    #     if fine_tune > 0:
-    #         for layer in conv_base.layers[:-fine_tune]:
-    #             layer.trainable = False
-    #     else:
-    #         for layer in conv_base.layers:
-    #             layer.trainable = False
+
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        x = Dense(1024, activation='relu')(x)
+        x = Dense(1024, activation='relu')(x)
+        x = Dense(512, activation='relu')(x)
+        preds = Dense(n_classes, activation='softmax')(x)
+
+        model = Model(inputs=base_model.input, outputs=preds)
+        # for i, layer in enumerate(model.layers):
+        #     print(i, layer.name)
+
