@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import cv2
-# import pickle
+import pickle
 import random
 from keras.utils import normalize
 from sklearn.model_selection import train_test_split
